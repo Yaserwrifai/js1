@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Login - URBAN SHOP</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header>
+  <div class="logo"><img src="Images/barnd1.png" class="brand">&nbsp; URBAN SHOP</div>
+</header>
+
+<div class="form-container">
+  <h1>Login</h1>
+  <input type="email" id="login-email" placeholder="Enter Email">
+  <input type="password" id="login-password" placeholder="Enter Passwort">
+  <label class="label_login"><input type="checkbox" id="rememberMe"> Remember me</label>
+  <button id="login-submit">Login</button>
+  <p>No account? <a href="register.html">Register</a></p>
+</div>
+
+<script>
+  document.getElementById('login-submit').addEventListener('click', () => {
+    const email    = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value.trim();
+    const remember = document.getElementById('rememberMe').checked;
+
+    if(!email || !password) {
+      return alert("Please enter your email and password!");
+    }
+
+    const users = JSON.parse(localStorage.getItem("users") || "[]");
+    const user = users.find(u => u.email === email && u.password === password);
+
+    if(!user) {
+      return alert("Incorrect email or password!");
+    }
+
+    if(remember) {
+      localStorage.setItem("currentUser", JSON.stringify(user));
+    } else {
+      sessionStorage.setItem("currentUser", JSON.stringify(user));
+    }
+
+    window.location.href = "index.html";
+  });
+</script>
+</body>
+</html>

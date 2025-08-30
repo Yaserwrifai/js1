@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Register - URBAN SHOP</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header>
+  <div class="logo"><img src="Images/barnd1.png" class="brand">&nbsp; URBAN SHOP</div>
+</header>
+
+<div class="form-container">
+  <h1>Register</h1>
+  <input type="text" id="register-firstname" placeholder="Firstname">
+  <input type="text" id="register-lastname" placeholder="Lastname">
+  <input type="email" id="register-email" placeholder="Enter Email">
+  <input type="password" id="register-password" placeholder="Passwort">
+  <button id="register-submit">Register</button>
+  <p>Schon registriert? <a href="login.html">Login</a></p>
+</div>
+
+<script>
+  document.getElementById('register-submit').addEventListener('click', () => {
+    const firstname = document.getElementById('register-firstname').value.trim();
+    const lastname  = document.getElementById('register-lastname').value.trim();
+    const email     = document.getElementById('register-email').value.trim();
+    const password  = document.getElementById('register-password').value.trim();
+
+    if(!firstname || !lastname || !email || !password) {
+      return alert("Please fill in all fields!");
+    }
+
+    const users = JSON.parse(localStorage.getItem("users") || "[]");
+    if(users.find(u => u.email === email)) {
+      return alert("Email already registered!");
+    }
+
+    const newUser = { firstname, lastname, email, password };
+    users.push(newUser);
+    localStorage.setItem("users", JSON.stringify(users));
+    localStorage.setItem("currentUser", JSON.stringify(newUser));
+
+    alert("Account registered successfully!");
+    window.location.href = "login.html";
+  });
+</script>
+</body>
+</html>

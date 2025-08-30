@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Favorite Products</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="css/style.css">
+<style>
+/* Grid layout for cards */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+  padding: 20px;
+}
+
+/* Card styling */
+.card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  text-align: center;
+  
+}
+
+.card:hover {
+  border: 2px solid red;
+}
+
+.card img {
+  max-width: 100%;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.card h3 {
+  margin: 10px 0 5px;
+  font-size: 18px;
+}
+
+.card p {
+  margin: 5px 0;
+  color: #555;
+}
+
+/* Heart button always red */
+.heart-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 22px;
+  color: red;
+  margin-top: 10px;
+}
+.heart-btn i {
+  color: red;
+}
+.page-title {
+  text-align: center;
+  text-decoration: underline;
+  text-decoration-color: red;
+  text-underline-offset: 5px; /* adds a nice gap */
+  font-size: 28px;
+  margin: 20px 0;
+}
+
+</style>
+</head>
+<body>
+
+<header>
+  <a href="index.html" class="logo">
+    <img src="Images/barnd1.png" class="brand">&nbsp; URBAN SHOP
+  </a>
+  <div id="user-area">
+    <span id="welcome-text"></span>
+    <button class="auth-btn" id="logout-btn">Logout</button>
+  </div>
+</header>
+
+
+<h1 class="page-title">Favorite Products</h1>
+
+<div class="grid" id="favoriteGrid"></div>
+
+<script>
+// --- Load all products from localStorage or fallback ---
+const products = JSON.parse(localStorage.getItem("products")) || [
+  { name: "Wireless Headphones", price: 59.99, category: "Electronics", image: "Images/headphones.jpg" },
+  { name: "Smartwatch Pro", price: 129.00, category: "Electronics", image: "Images/Smartwatch_Pro.avif" },
+  { name: "Running Shoes", price: 75.50, category: "Fashion", image: "Images/Running_Shoes.webp" },
+  { name: "Leather Backpack", price: 89.90, category: "Accessories", image: "Images/Leather_Backpack.jpg" },
+  { name: "Bluetooth Speaker", price: 45.00, category: "Electronics", image: "Images/Bluetooth_Speaker.jpg" },
+  { name: "Sunglasses Classic", price: 29.99, category: "Accessories", image: "Images/Sunglasses_Classic.jpg" },
+  { name: "Casual T-Shirt", price: 19.95, category: "Fashion", image: "Images/Casual_T-Shirt.jpg" },
+  { name: "Office Chair", price: 149.00, category: "Furniture", image: "Images/Office_Chair.webp" },
+  { name: "Coffee Maker", price: 99.00, category: "Home Appliances", image: "Images/Coffee_Maker.webp" }
+];
+
+// --- Favorites from localStorage ---
+let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
+
+const favoriteGrid = document.getElementById("favoriteGrid");
+
+// Render favorite products
+function renderFavorites() {
+  favoriteGrid.innerHTML = "";
+  const favoriteProducts = products.filter(p => favorites.includes(p.name));
+
+  if (favoriteProducts.length === 0) {
+    favoriteGrid.innerHTML = "<p style='text-align:center;'>No favorite products yet.</p>";
+    return;
+  }
+
+  favoriteProducts.forEach(product => {
+    const card = document.createElement("div");
+    card.classList.add("card");
+    card.innerHTML = `
+      <img src="${product.image}" alt="${product.name}">
+      <h3>${product.name}</h3>
+      <p class="price">€${product.price.toFixed(2)}</p>
+      <p>${product.category}</p>
+      <button class="heart-btn" data-name="${product.name}">
+        <i class="fa-solid fa-heart"></i>
+      </button>
+    `;
+    favoriteGrid.appendChild(card);
+  });
+}
+
+renderFavorites();
+
+// --- Heart click: remove from favorites ---
+favoriteGrid.addEventListener("click", e => {
+  if (e.target.closest(".heart-btn")) {
+    const btn = e.target.closest(".heart-btn");
+    const productName = btn.getAttribute("data-name");
+
+    // Remove from favorites
+    favorites = favorites.filter(name => name !== productName);
+    localStorage.setItem("favorites", JSON.stringify(favorites));
+
+    renderFavorites();
+  }
+});
+
+// --- Auth and logout ---
+const welcomeText = document.getElementById("welcome-text");
+const logoutBtn = document.getElementById("logout-btn");
+function checkLogin() {
+  let currentUser = localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser");
+  if (currentUser) {
+    currentUser = JSON.parse(currentUser);
+    welcomeText.textContent = `Hallo, ${currentUser.firstname} ${currentUser.lastname}`;
+  }
+}
+logoutBtn.addEventListener("click", () => {
+  localStorage.removeItem("currentUser");
+  sessionStorage.removeItem("currentUser");
+  window.location.href = "index.html";
+});
+checkLogin();
+</script>
+
+</body>
+</html>

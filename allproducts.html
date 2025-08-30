@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>URBAN SHOP - My Cart</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+  /* container: show items in two columns (wrap) */
+  .cart-container {
+    padding: 20px;
+    display: flex;
+    justify-items: center;
+    flex-wrap: wrap;
+    gap: 24px;                /* space between cards */
+    align-items:center;
+    margin: 0 100px;
+   
+  }
+
+  /* each card: occupy ~50% so two fit in one row */
+  .cart-item {
+    flex: 0 0 calc(50% - 12px); /* two columns (subtract half the gap) */
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 8px;
+    background: #fff;
+    
+  }
+.cart-item:hover{
+ border: 1px solid red;
+}
+  /* image inside card */
+  .cart-item img {
+    width: 110px;
+    height: 110px;
+    object-fit: cover;
+    margin: 0;
+    flex: 0 0 110px;
+    border-radius: 6px;
+    background:#f6f6f6;
+  }
+
+  /* details area grows */
+  .cart-details {
+    flex: 1 1 auto;
+    min-width: 0; /* allow content to truncate/wrap nicely */
+     
+  }
+
+  /* quantity controls (keeps same look) */
+  .quantity-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+   
+  }
+  .quantity-controls button {
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    border: 1px solid #d0d0d0;
+    background: #fff;
+    border-radius: 6px;
+  }
+
+  /* remove button aligned to the right of the card */
+  .remove-btn {
+    background: red;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    cursor: pointer;
+    border-radius: 6px;
+    margin-left: 12px;
+    flex: 0 0 auto;
+  }
+
+  /* total price stays full width below the cards */
+  .total-price {
+    font-size: 28px;
+    font-weight: bold;
+    margin-top: 20px;
+    text-align: center;
+    width: 100%;
+    
+  }
+
+  
+
+</style>
+
+</head>
+<body>
+<header>
+  <a href="index.html" class="logo">
+    <img src="Images/barnd1.png" class="brand">&nbsp; URBAN SHOP
+  </a>
+
+  <!-- Auth Bereich -->
+  <div class="auth-buttons" id="auth-area">
+    <button class="auth-btn" id="login-btn" onclick="window.location.href='login.html'">Login</button>
+    <button class="auth-btn register" id="register-btn" onclick="window.location.href='register.html'">Register</button>
+  </div>
+
+  <!-- User Bereich -->
+  <div id="user-area" style="display:none;">
+    <span id="welcome-text"></span>
+    <div id="cart-icon">
+      <i class="fa-solid fa-cart-shopping"></i>
+      <span id="cart-count">0</span>
+    </div>
+    <button class="auth-btn" id="logout-btn">Logout</button>
+  </div>
+</header>
+
+<div class="cart-container" id="cart-container"></div>
+<div class="total-price" id="total-price">Total Price: $0.00</div>
+
+
+<script>
+let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+function renderCart() {
+  const container = document.getElementById("cart-container");
+  const totalPriceEl = document.getElementById("total-price");
+  container.innerHTML = "";
+  let total = 0;
+
+  cart.forEach((item, index) => {
+    const div = document.createElement("div");
+    div.classList.add("cart-item");
+    div.innerHTML = `
+      <img src="${item.image}" alt="${item.name}">
+      <div class="cart-details">
+        <h3>${item.name}</h3><br/>
+        <p>Category: ${item.category}</p><br/>
+        <p>Price: $${item.price}</p><br/>
+        <div class="quantity-controls">
+          <button onclick="decreaseQuantity(${index})">-</button>
+          <span>${item.quantity}</span>
+          <button onclick="increaseQuantity(${index})">+</button>
+        </div>
+      </div>
+      <button class="remove-btn" onclick="removeFromCart(${index})">Remove from Cart</button>
+    `;
+    container.appendChild(div);
+    total += item.price * item.quantity;
+  });
+
+  totalPriceEl.textContent = `Total Price: $${total.toFixed(2)}`;
+  document.getElementById("cart-count").textContent = cart.reduce((sum, i) => sum + i.quantity, 0);
+  localStorage.setItem("cart", JSON.stringify(cart));
+}
+
+function increaseQuantity(index) {
+  cart[index].quantity++;
+  renderCart();
+}
+function decreaseQuantity(index) {
+  if (cart[index].quantity > 1) {
+    cart[index].quantity--;
+  } else {
+    cart.splice(index, 1);
+  }
+  renderCart();
+}
+function removeFromCart(index) {
+  cart.splice(index, 1);
+  renderCart();
+}
+
+// --- Auth check ---
+function checkLogin() {
+  let currentUser = localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser");
+  if(currentUser) {
+    currentUser = JSON.parse(currentUser);
+    document.getElementById("auth-area").style.display = "none";
+    document.getElementById("user-area").style.display = "flex";
+    document.getElementById("welcome-text").textContent = `Hello, ${currentUser.firstname}`;
+  }
+}
+document.getElementById("logout-btn").addEventListener("click", () => {
+  localStorage.removeItem("currentUser");
+  sessionStorage.removeItem("currentUser");
+  window.location.href = "index.html";
+});
+
+checkLogin();
+renderCart();
+</script>
+</body>
+</html>
