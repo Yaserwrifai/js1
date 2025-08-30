@@ -19,7 +19,7 @@
   <div id="user-area" style="display:none;">
     <span id="welcome-text"></span>
 
-    <div id="cart-icon">
+    <div id="cart-icon" style="cursor:pointer;">
       <i class="fa-solid fa-cart-shopping"></i>
       <span id="cart-count">0</span>
     </div>
@@ -45,7 +45,7 @@
   <ul id="cart-items"></ul>
   <p><strong>Total: <span id="cart-total">€0.00</span></strong></p>
   <button id="add-all-products-btn" class="btn">Add All Products</button>
-  <button id="Favorite Products-btn" class="btn">Favorite Products</button>
+  <button id="favorite-products-btn" class="btn">Favorite Products</button>
 </div>
 
 <div class="grid" id="productGrid"></div>
@@ -73,8 +73,21 @@ const cartTotal = document.getElementById("cart-total");
 
 // favorites (persisted)
 let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
-
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+// --- Helper: check login ---
+function getCurrentUser() {
+  return JSON.parse(localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser") || "null");
+}
+function requireLogin() {
+  const user = getCurrentUser();
+  if (!user) {
+    alert("⚠️ You must register or login before ordering.");
+    window.location.href = "login.html";
+    return false;
+  }
+  return true;
+}
 
 // --- Render Products ---
 function renderProducts(productList) {
@@ -95,8 +108,6 @@ function renderProducts(productList) {
         <button class="btn product-btn ${inCart ? "in-cart" : ""}" data-index="${index}">
           ${inCart ? "Remove from Cart" : "Add to Cart"}
         </button>
-
-        <!-- heart button next to Add to Cart -->
         <button class="heart-btn" data-index="${index}" aria-label="Favorite" title="Add to favorites" style="border:none; background:transparent; cursor:pointer; font-size:18px;">
           <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart" style="${isFav ? 'color:red;' : ''}"></i>
         </button>
@@ -108,9 +119,7 @@ function renderProducts(productList) {
 renderProducts(products);
 
 // --- Cart Functions ---
-function isInCart(product) {
-  return cart.some(item => item.name === product.name);
-}
+function isInCart(product) { return cart.some(item => item.name === product.name); }
 function addToCart(product) {
   const found = cart.find(item => item.name === product.name);
   if(found) found.quantity++;
@@ -153,89 +162,67 @@ function updateCartUI() {
   cartTotal.textContent = "€"+total.toFixed(2);
 }
 
-// --- Event Delegation for Product Buttons (Add/Remove) ---
+// --- Event Delegation ---
 document.addEventListener("click",(e)=>{
   // product add/remove
   if(e.target.classList.contains("product-btn") || e.target.closest('.product-btn')) {
+    if(!requireLogin()) return;
+
     const btn = e.target.classList.contains("product-btn") ? e.target : e.target.closest('.product-btn');
-    if(!btn.hasAttribute("data-index")) return;
     const idx = parseInt(btn.getAttribute("data-index"),10);
     const product = products[idx];
 
     if(isInCart(product)) {
-      // remove
       removeFromCart(product);
-      // immediate visual feedback
-      btn.classList.remove('in-cart');
-      btn.style.backgroundColor = ""; // reset inline style
-      btn.style.color = "";
       btn.textContent = "Add to Cart";
+      btn.classList.remove("in-cart");
+      btn.style.backgroundColor = "";
+      btn.style.color = "";
     } else {
-      // add
       addToCart(product);
-      // immediate visual feedback
-      btn.classList.add('in-cart');
-      btn.style.backgroundColor = "red"; // immediate red color
-      btn.style.color = "#fff";
       btn.textContent = "Remove from Cart";
+      btn.classList.add("in-cart");
+      btn.style.backgroundColor = "red";
+      btn.style.color = "#fff";
     }
   }
 
-  // heart button (favorite toggle)
+  // heart button (favorite)
   if(e.target.closest('.heart-btn')) {
+    if(!requireLogin()) return;
+
     const heartBtn = e.target.closest('.heart-btn');
-    if(!heartBtn.hasAttribute("data-index")) return;
     const idx = parseInt(heartBtn.getAttribute("data-index"), 10);
     const product = products[idx];
 
-    // toggle favorite in array
     if(favorites.includes(product.name)) {
       favorites = favorites.filter(n => n !== product.name);
     } else {
       favorites.push(product.name);
     }
     localStorage.setItem("favorites", JSON.stringify(favorites));
-
-    // immediate visual feedback: toggle icon class + color
-    const icon = heartBtn.querySelector('i');
-    if(icon) {
-      if(favorites.includes(product.name)) {
-        icon.classList.remove('fa-regular');
-        icon.classList.add('fa-solid');
-        icon.style.color = 'red';
-      } else {
-        icon.classList.remove('fa-solid');
-        icon.classList.add('fa-regular');
-        icon.style.color = '';
-      }
-    }
-
-    // re-render so the state persists cleanly (keeps everything consistent)
     renderProducts(products);
   }
 });
 
 // --- Cart Popup Toggle ---
 cartIcon.addEventListener("click",()=>{
+  if(!requireLogin()) return;
   cartPopup.style.display = cartPopup.style.display==="block"?"none":"block";
 });
 
-// --- Quantity controls inside cart popup ---
+// --- Quantity controls ---
 cartItems.addEventListener("click", (e) => {
   const idx = e.target.getAttribute("data-index");
   if (idx === null) return;
   const index = parseInt(idx, 10);
   if (e.target.classList.contains("increase")) {
-    if(cart[index]) {
-      cart[index].quantity++;
-      saveCart();
-    }
+    cart[index].quantity++;
+    saveCart();
   } else if (e.target.classList.contains("decrease")) {
-    if(cart[index]) {
-      cart[index].quantity--;
-      if (cart[index].quantity <= 0) cart.splice(index, 1);
-      saveCart();
-    }
+    cart[index].quantity--;
+    if (cart[index].quantity <= 0) cart.splice(index, 1);
+    saveCart();
   }
 });
 
@@ -263,9 +250,8 @@ const welcomeText = document.getElementById("welcome-text");
 const logoutBtn = document.getElementById("logout-btn");
 
 function checkLogin() {
-  let currentUser = localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser");
+  const currentUser = getCurrentUser();
   if(currentUser) {
-    currentUser = JSON.parse(currentUser);
     authArea.style.display = "none";
     userArea.style.display = "flex";
     welcomeText.textContent = `Hallo, ${currentUser.firstname} ${currentUser.lastname}`;
@@ -274,27 +260,40 @@ function checkLogin() {
     userArea.style.display = "none";
   }
 }
+
+// --- Logout with reset ---
 logoutBtn.addEventListener("click",()=>{
+  // Clear login
   localStorage.removeItem("currentUser");
   sessionStorage.removeItem("currentUser");
-  window.location.href="index.html";
+
+  // Clear cart and favorites
+  cart = [];
+  favorites = [];
+  localStorage.removeItem("cart");
+  localStorage.removeItem("favorites");
+
+  // Reset UI
+  updateCartUI();
+  renderProducts(products);
+  checkLogin();
 });
 
 checkLogin();
 updateCartUI();
-// add-all-products-btn
-// add-all-products-btn
+
+// --- Add-all-products ---
 document.getElementById("add-all-products-btn").addEventListener("click", () => {
+  if(!requireLogin()) return;
   window.location.href = "allproducts.html";
 });
 
-// --- Favorite Products button ---
-document.getElementById("Favorite Products-btn").addEventListener("click", () => {
+// --- Favorite Products ---
+document.getElementById("favorite-products-btn").addEventListener("click", () => {
+  if(!requireLogin()) return;
   window.location.href = "favorite.html";
 });
-
-
-
 </script>
+
 </body>
 </html>
